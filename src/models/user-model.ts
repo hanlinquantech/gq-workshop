@@ -1,29 +1,44 @@
-import mongoose, { Document } from 'mongoose'
-import { BaseSchema } from './base-schema'
-import { IUser } from '../interfaces/user-interfaces'
+import { Document, model, Schema } from 'mongoose'
+import { compare, hash } from 'bcryptjs'
 
-const UserSchema = new BaseSchema<IUser>(
-	{
-		username: { type: String, index: { unique: true }, dropDups: true },
-		password: { type: String, required: true },
-		str: { type: String, required: true },
-		fullname: String,
-		phone: { type: String, index: true },
-		email: String
-	},
-	{
-		toJSON: {
-			transform(doc: Document, ret: Record<string, any>) {
-				ret.id = ret._id
-				delete ret._id
-				delete ret.password
-				delete ret.str
-				delete ret.__v
-			}
-		}
+interface IUser extends Document {
+	username: string
+	email: string
+	password: string
+	generatePasswordHash(): Promise<string>
+	validatePassword(password: string): Promise<boolean>
+}
+const userSchema = new Schema<IUser>({
+	username: { type: String, required: true },
+	email: { type: String, required: true },
+	password: { type: String, required: true }
+})
+
+userSchema.statics.findByLogin = async function (login: string) {
+	let user = await this.findOne({
+		username: login
+	})
+	if (!user) {
+		user = await this.findOne({ email: login })
 	}
-)
+	return user
+}
 
-const UserModel = mongoose.model<IUser>('User', UserSchema)
+userSchema.methods.generatePasswordHash = async function () {
+	const saltRounds = 10
+	return hash(this.password, saltRounds)
+}
 
-export default UserModel
+userSchema.methods.validatePassword = async function (password: string) {
+	return compare(password, this.password)
+}
+
+userSchema.pre('save', async function () {
+	if (this.isModified('password')) {
+		this.password = await this.generatePasswordHash()
+	}
+})
+
+const User = model<IUser>('User', userSchema)
+
+export default User
