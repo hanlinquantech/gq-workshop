@@ -1,3 +1,6 @@
+# IntelliJ project files
+.idea
+
 # Logs
 logs
 *.log
@@ -37,6 +40,6 @@ build/
 
 .eslintcache
 
-log/
+src/log/
 
 dev-storage
