@@ -28,6 +28,7 @@
     "no-param-reassign": "off",
     "new-cap": "off",
     "func-names": "off",
-    "import/no-extraneous-dependencies": "off"
+    "import/no-extraneous-dependencies": "off",
+    "@typescript-eslint/naming-convention": "off"
   }
 }
