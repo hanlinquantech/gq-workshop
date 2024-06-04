@@ -1,7 +1,7 @@
 import { Document, model, Schema } from 'mongoose'
-import { compare, hash } from 'bcryptjs'
+import { compare, hash } from 'bcrypt'
 
-interface IUser extends Document {
+export interface IUser extends Document {
 	username: string
 	email: string
 	password: string

@@ -1,34 +1,40 @@
-import express, { Request, Response, NextFunction, Express } from 'express'
-import bodyParser from 'body-parser'
-import HttpStatus from 'http-status-codes'
-import routes from './routes'
-import { RESPONSE_STATUS } from './utils/enums'
+import express, { Express, Request } from 'express'
+
+import * as jwt from 'jsonwebtoken'
 import cors from 'cors'
+import { AuthenticationError, ApolloServer } from 'apollo-server-express'
+import schema from './schema'
+import { models } from 'mongoose'
+import resolvers from './resolvers'
 
 const app: Express = express()
 
 app.use(cors())
-app.use(bodyParser.urlencoded({ extended: false }))
-app.use(bodyParser.json())
 
-app.use(routes)
+const getMe = async (req: Request) => {
+	const token = req.headers['x-token'] as string
 
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-	if (err) {
-		return res.status(err.statusCode || HttpStatus.INTERNAL_SERVER_ERROR).send({
-			status: RESPONSE_STATUS.ERROR,
-			message: err.message
-		})
+	if (token) {
+		try {
+			return jwt.verify(token, process.env.SECRET as string)
+		} catch (e) {
+			throw new AuthenticationError('Your session expired. Sign in again.')
+		}
 	}
+}
 
-	next()
+const apolloServer = new ApolloServer({
+	introspection: true,
+	typeDefs: schema,
+	resolvers,
+	context: async ({ req }) => {
+		const me = await getMe(req)
+		return {
+			models,
+			me,
+			secret: process.env.SECRET
+		}
+	}
 })
 
-app.use((req: Request, res: Response) => {
-	return res.status(HttpStatus.NOT_FOUND).json({
-		status: RESPONSE_STATUS.ERROR,
-		message: 'Request not found.'
-	})
-})
-
-export default app
+export { app, apolloServer }

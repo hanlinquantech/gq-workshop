@@ -27,6 +27,7 @@
     "no-underscore-dangle": "off",
     "no-param-reassign": "off",
     "new-cap": "off",
-    "func-names": "off"
+    "func-names": "off",
+    "import/no-extraneous-dependencies": "off"
   }
 }
